@@ -1,0 +1,16 @@
+f2b105862c40006878511f52182b2a5a *DESCRIPTION
+5d8cf78b7732b43d5f04f776cc36f34d *NAMESPACE
+21efdeff5edcd4955fe7f7b731996031 *R/edge.creation.R
+5804f482c5e63df6597c93725939d427 *R/gDefrag.full.R
+71c22b261856a9fb29b179019e0b941a *R/node.creation.R
+1571207703fdadb409bc3e7aaa87fdc2 *R/plotgraph.R
+09191fb099caa74c4f452992ef98fbf4 *R/prioritize.R
+35099625f0bc8e1aacdc86d5dda9aad4 *build/partial.rdb
+93a9262dde5f4133a0e69828ef31b065 *data/road_P.rda
+90bc1c801f1b3556aeb93d6c5f1b6feb *man/edge.creation.Rd
+6520577d8138392372281398b66ddcef *man/gDefrag-package.Rd
+8fa1c476c0755a310049fda26d8a3e51 *man/gDefrag.full.Rd
+367530536986eda721999d2451164997 *man/node.creation.Rd
+4d012ece149ea115cf02f2c57e18c2a6 *man/plotgraph.Rd
+6b9f620cbc4c1af71a639c1f37d745c1 *man/prioritize.Rd
+74057721faf6fc7f8cafc5e8dcf51eac *man/road_P.Rd
