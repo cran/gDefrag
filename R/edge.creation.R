@@ -6,7 +6,9 @@ road_length <- NULL
 node_A <- NULL
 node_B <- NULL
 
-  if (!(all.equal(nodes@proj4string@projargs, land_polyg@proj4string@projargs)))
+proj4string(land_polyg) <- CRS(proj4string(land_polyg))
+
+  if (!(all.equal(slot(slot(nodes, "proj4string"), "projargs"), slot(slot(land_polyg, "proj4string"), "projargs")))) 
     stop("Input maps have different CRS.")
 
     message("Extracting road lines from polygon borders...")
@@ -14,11 +16,10 @@ node_B <- NULL
     road_L <- disaggregate(gLineMerge(gUnion(borders, borders)))
 
   message("Creating edges...")
+  node_T <- slot(nodes, "data")
 
-  node_T <- nodes@data 
-  
   adj <- as.data.frame(gTouches(land_polyg, byid = TRUE))  
-  rownames(adj) <- colnames(adj) <- as.character(1:length(land_polyg))  
+  rownames(adj) <- colnames(adj) <- as.character(1:length(land_polyg)) 
   adj <- upper.tri(adj, diag = FALSE) * adj
   adj_names <- rownames(adj)
   adj <- as.matrix(adj)
@@ -35,9 +36,8 @@ node_B <- NULL
     P2 <- land_polyg[ID1[i, 2], ]
     if (!inherits(gIntersection(P1, P2, byid = TRUE), "SpatialLines"))
       ID1 <- ID1[-which(rownames(ID1) == i), ]
-  }  
-  
-  
+  } 
+
   dist1 <- dist(node_T)
   dist1 <- as.data.frame(as.matrix(dist1))
   rownames(dist1) <- adj_names
@@ -58,8 +58,7 @@ node_B <- NULL
   }
 
   ID1 <- cbind(ID1, d2)
-
-
+  
   x1_A <- rep(NA, nrow(ID1))
   y1_A <- rep(NA, nrow(ID1))
 
@@ -69,13 +68,11 @@ node_B <- NULL
   area_A <- rep(NA, nrow(ID1))
   area_B <- rep(NA, nrow(ID1))
 
-
   for(i in 1:nrow(ID1)){
 
-
     row2 <- ID1[i,]
-    nodeA <- row2[1]
-    nodeB <- row2[2]
+    nodeA <- as.numeric(row2[1])
+    nodeB <- as.numeric(row2[2])
 
     lineA <- which(node_T$node_ID == nodeA)
     lineB <- which(node_T$node_ID == nodeB)
@@ -109,6 +106,7 @@ node_B <- NULL
   colnames(edge_T) <- c("node_A", "node_B", "distance", "x_node_A", "y_node_A", "x_node_B", "y_node_B", "value_A", "value_B")
 
   out_lines <- vector("list", nrow(edge_T))
+  
   for(i in 1:nrow(edge_T)){
     l0 <- edge_T[i,]
     xA <- as.numeric(l0["x_node_A"])
@@ -121,20 +119,19 @@ node_B <- NULL
     out_lines[[i]] <- l2
   }
 
-  edge_l <- SpatialLines(out_lines) 
-  edge_L <- SpatialLinesDataFrame(edge_l, data = edge_T)  
-  edge_L@proj4string@projargs <- nodes@proj4string@projargs 
+  edge_l <- SpatialLines(out_lines)
+  edge_L <- SpatialLinesDataFrame(edge_l, data = edge_T)
+  slot(slot(edge_L, "proj4string"), "projargs") <- slot(slot(nodes, "proj4string"), "projargs")
 
+  if (class(road_L) == "SpatialLinesDataFrame") 
+    slot(road_L, "data")$autoID <- 1:nrow(slot(road_L,"data")) 
+    else if (class(road_L) == "SpatialLines")  
+    road_L <- SpatialLinesDataFrame(road_L, data = data.frame(autoID = 1:length(road_L)))
 
-  if (class(road_L) == "SpatialLinesDataFrame")  
-    road_L@data$autoID <- 1:nrow(road_L@data)  
-  else if (class(road_L) == "SpatialLines")  
-    road_L <- SpatialLinesDataFrame(road_L, data = data.frame(autoID = 1:length(road_L))) 
-
-  land_polyg@data$autoID <- 1:nrow(land_polyg@data) 
+  slot(land_polyg, "data")$autoID <- 1:nrow(slot(land_polyg, "data"))
   line_dists <- matrix(data = NA, nrow = length(road_L), ncol = length(land_polyg))
 
-  for (l in 1:length(road_L)) {  
+  for (l in 1:length(road_L)) { 
     road <- subset(road_L, autoID == l)
     l_centr <- SpatialLinesMidPoints(road)
     for (p in 1:length(land_polyg)) {
@@ -142,11 +139,10 @@ node_B <- NULL
     }  
   }  
 
-
   line_neighbours <- vector("list", length(road_L))
   for (d in 1:nrow(line_dists)) {
-    line_neighbours[[d]] <- which(line_dists[d, ] %in% sort(line_dists[d, ])[1:2]) 
-	}  
+    line_neighbours[[d]] <- which(line_dists[d, ] %in% sort(line_dists[d, ])[1:2])
+  }
 
   names(line_neighbours) <- as.character(1:length(line_neighbours))
 
@@ -154,18 +150,17 @@ node_B <- NULL
   edge_road_IDs <- vector("list", length(edge_L))
   for (e in 1:length(edge_L)) {
     road_index <- which(sapply(line_neighbours, setequal, t(edge_L@data[e, c("node_A", "node_B")])))
-
+    road_index <- which(sapply(line_neighbours, setequal, t(slot(edge_L, "data")[e, c("node_A", "node_B")])))
     edge_road_IDs[[e]] <- as.integer(names(line_neighbours)[road_index])
-  }  
+  } 
 
-
-  edge_L@data$road_length <- NA
-  for (i in 1:nrow(edge_L@data)) {
+  slot(edge_L, "data")$road_length <- NA
+  
+  for(i in 1:nrow(slot(edge_L, "data"))){
     edge_road <- road_L[road_L$autoID %in% edge_road_IDs[[i]], ]
-    edge_road_sl <- as(edge_road, "SpatialLines")  
-    edge_L@data[i, "road_length"] <- sum(SpatialLinesLengths(edge_road_sl))
+    edge_road_sl <- as(edge_road, "SpatialLines") 
+    slot(edge_L, "data")[i, "road_length"] <- sum(SpatialLinesLengths(edge_road_sl))
   }  
-
 
   edge_L <- subset(edge_L, road_length >= min_length)
 

@@ -1,11 +1,12 @@
 prioritize <-
-function(nodes, edges, method, shape=FALSE, shape_name_out = "priorities_shape", shape_name_nodes_edges = "nodes_with_edges"){
+function(nodes, edges, method, shape = FALSE, shape_name_out = "priorities_shape", shape_name_nodes_edges = "nodes_with_edges"){
+
 
   if (!(method %in% c("value", "between", "IIC", "AWM"))) stop("Invalid 'method'.")
 
-  node_T <- nodes@data  
-  edge_T <- edges@data 
-
+  node_T <- slot(nodes, "data")  
+  edge_T <- slot(edges, "data") 
+  
   if (method == "value"){
     area_sum <- edge_T[, "value_A"] + edge_T[, "value_B"]
     tab1 <- cbind(as.numeric(rownames(edge_T)), area_sum)
@@ -18,7 +19,6 @@ function(nodes, edges, method, shape=FALSE, shape_name_out = "priorities_shape",
     result <- cbind(edge_T, t2)
     result <- as.data.frame(result)
   }
-
 
   if (method == "between"){
     nd <- node_T  
@@ -33,7 +33,7 @@ function(nodes, edges, method, shape=FALSE, shape_name_out = "priorities_shape",
 
     metric <- function(n, e){
 
-      nd <- n  
+      nd <- n
       mygraph <- graph_from_data_frame(e, directed=FALSE, vertices=nd)
       dist_tp <- as.data.frame(distances(mygraph))
       topo_col <- rep(NA, nrow(e))
@@ -45,10 +45,9 @@ function(nodes, edges, method, shape=FALSE, shape_name_out = "priorities_shape",
         topo_col[i] <- dist_tp1
       }
       newT <- cbind(e,topo_col)
-      comp1 <- sum((newT[,"value_A"]*newT[,"value_B"])/(1+newT[,ncol(newT)]))  # changed from col numbers to col names
+      comp1 <- sum((newT[,"value_A"]*newT[,"value_B"])/(1+newT[,ncol(newT)]))
       return(comp1)
     }
-
 
     dI <- rep(NA, nrow(edge_T))
 	
@@ -70,7 +69,6 @@ function(nodes, edges, method, shape=FALSE, shape_name_out = "priorities_shape",
 
   if (method == "AWM"){
 
- #from: https://www.r-statistics.com/2012/01/merging-two-data-frame-objects-while-preserving-the-rows-order/
 	merge.with.order <- function(x,y, ..., sort = TRUE, keep_order)
 	{
 		add.id.column.to.data <- function(DATA)
@@ -86,14 +84,11 @@ function(nodes, edges, method, shape=FALSE, shape_name_out = "priorities_shape",
 			DATA[ss_r, ss_c]
 		}
  
-		# tmp <- function(x) x==1; 1	# why we must check what to do if it is missing or not...
-		# tmp()
- 
+
 		if(!missing(keep_order))
 		{
 			if(keep_order == 1) return(order.by.id...and.remove.it(merge(x=add.id.column.to.data(x),y=y,..., sort = FALSE)))
 			if(keep_order == 2) return(order.by.id...and.remove.it(merge(x=x,y=add.id.column.to.data(y),..., sort = FALSE)))
-			# if you didn't get "return" by now - issue a warning.
 			warning("The function merge.with.order only accepts NULL/1/2 values for the keep_order variable")
 		} else {return(merge(x=x,y=y,..., sort = sort))}
 	}
@@ -106,21 +101,17 @@ function(nodes, edges, method, shape=FALSE, shape_name_out = "priorities_shape",
   ndB <- merge.with.order(x=nodes_B_prop, y=nodes_areas, by.x="node_B", 
   by.y="node_ID", keep_order=1)
   table1 <- cbind(ndA,ndB)
-  #names(table1) <- c("node_A", "Ah", "At", "node_B", "Bh", "Bt")
   metric <- (table1[,2]*table1[,6])+(table1[,5]*table1[,3])
   hab_prop <- (metric-min(metric))/(max(metric)-min(metric))*100
   result <- cbind(edge_T, hab_prop)
   result <- as.data.frame(result)
   }
 
-  #colnames(result)[10] <- "priorization"
   colnames(result)[ncol(result)] <- "priorization"
 
-  edges@data <- data.frame(edges@data, priorization = result[ , "priorization"])  # new
-  #return(result)
-  
-  #Para seleccionar so os nodos com edges
-  nodes_w_edges_ID <- unique(c(edges@data[,1], edges@data[,2]))
+  slot(edges, "data") <- data.frame(slot(edges, "data"), priorization = result[ , "priorization"]) 
+    
+  nodes_w_edges_ID <- unique(c(slot(edges, "data")[,1], slot(edges, "data")[,2]))
   nodes2 <- nodes
   nodes2 <- nodes2[nodes2$node_ID %in% nodes_w_edges_ID,]
     
@@ -132,5 +123,5 @@ function(nodes, edges, method, shape=FALSE, shape_name_out = "priorities_shape",
 
  }
   
-  return(edges) # new
+  return(edges)
 }

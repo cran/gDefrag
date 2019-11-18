@@ -1,6 +1,8 @@
 gDefrag.full <-
 function(land_polyg, method, value_col = NULL, min_length = 0, min_pol_area = 0, shape = FALSE, shape_name_nodes = "shape_all_nodes", shape_name_edges = "shape_edges", shape_name_out = "priorities_shape", shape_name_nodes_edges = "nodes_with_edges", scale_nodes = 10, col_nodes = "deepskyblue4", col_labels = "white", cex_labels = 1, main = "Graph") {
 
+proj4string(land_polyg) <- CRS(proj4string(land_polyg))
+  
 road_P <- NULL
 
   if (missing(method)) stop('argument "method" is missing, with no default')
@@ -11,7 +13,6 @@ road_P <- NULL
   edges0 <- edge.creation(nodes = nodes, land_polyg = land_polyg, min_length = min_length, min_pol_area = min_pol_area, plot = FALSE, shape = shape, shape_name_edges = shape_name_edges)
  
   message("Computing priorities...")
-
 
   edges <- prioritize(nodes = nodes, edges = edges0, method = method, shape = shape, shape_name_out = shape_name_out, shape_name_nodes_edges = shape_name_nodes_edges)
 
